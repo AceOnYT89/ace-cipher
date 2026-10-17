@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ace Cipher">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230a0a0a'/%3E%3Cg fill='none' stroke='%23e11d2a' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M154 388L256 116L358 388' stroke-width='46'/%3E%3Cpath d='M194 300H318' stroke-width='38'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -71,8 +72,13 @@ details summary{cursor:pointer;font-weight:600}
 .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
 .slot{position:relative;min-height:46px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);background:var(--field);color:var(--mute);border-radius:10px;font:600 .75rem ui-monospace,Menlo,Consolas,monospace;cursor:pointer;padding:6px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;user-select:none;-webkit-user-select:none}
 .slot.f{border-style:solid;border-color:var(--acc);color:var(--ink)}
-.slot .x{position:absolute;top:0;right:0;padding:7px 9px;font-size:.75rem;line-height:1;color:var(--mute)}
-@media (max-width:420px){main{padding:16px 12px 32px}.card{padding:14px}.slot{font-size:.7rem;min-height:48px}}
+.slotsH{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.slotsH .slotsL{margin:0}
+.mini{border:1px solid var(--line);background:var(--field);color:var(--mute);font-size:.8rem;font-weight:600;font-family:inherit;padding:6px 14px;border-radius:8px;cursor:pointer}
+.mini.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.slots.ed .slot.f{border-style:dashed}
+.slots.ed .slot.f::after{content:"✕";position:absolute;top:3px;right:6px;font-size:.7rem;color:var(--acc);pointer-events:none;text-shadow:0 0 3px #000}
+@media (max-width:420px){main{padding:16px 12px 32px}.card{padding:14px}.slot{font-size:.7rem;min-height:56px}}
 .slot .x:hover{color:var(--acc)}
 </style>
 </head>
@@ -83,7 +89,9 @@ details summary{cursor:pointer;font-weight:600}
 <div class="theme"><label for="thm">Theme color</label><button type="button" id="thm" class="swatch" aria-label="Theme color"></button><button class="btn" id="thr" type="button">Reset</button></div>
 <div class="picker" id="pk" hidden><svg id="sv" viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000"/></linearGradient></defs><rect id="svh" width="280" height="150" fill="#f00"/><rect width="280" height="150" fill="url(#gw)"/><rect width="280" height="150" fill="url(#gb)"/><circle id="m1" r="10" fill="none" stroke="#000" stroke-width="1.5"/><circle id="m2" r="8" fill="none" stroke="#fff" stroke-width="3"/></svg><input type="range" id="hue" min="0" max="360" value="0" aria-label="Hue"><div class="pmode"><button type="button" id="mHex" class="on">Hex</button><button type="button" id="mRgb">RGB</button></div>
 <input type="text" id="hx" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color">
-<div class="rgb" id="rgbBox" hidden><label>R<input type="number" id="rr" min="0" max="255" inputmode="numeric" aria-label="Red"></label><label>G<input type="number" id="gg" min="0" max="255" inputmode="numeric" aria-label="Green"></label><label>B<input type="number" id="bb" min="0" max="255" inputmode="numeric" aria-label="Blue"></label></div></div>
+<div class="rgb" id="rgbBox" hidden><label>R<input type="number" id="rr" min="0" max="255" inputmode="numeric" aria-label="Red"></label><label>G<input type="number" id="gg" min="0" max="255" inputmode="numeric" aria-label="Green"></label><label>B<input type="number" id="bb" min="0" max="255" inputmode="numeric" aria-label="Blue"></label></div>
+<div class="slotsH"><span class="slotsL">Saved colors</span><button type="button" class="mini" id="eC">Edit</button></div>
+<div class="slots" id="cslots"></div></div>
 
 <div class="tabs" role="tablist">
 <button id="tE" class="on" type="button">Encode</button>
@@ -94,7 +102,7 @@ details summary{cursor:pointer;font-weight:600}
 <label for="key">Key (letters set the shifts)</label>
 <input id="key" value="ACE" autocapitalize="characters" autocomplete="off" spellcheck="false">
 <div class="shifts" id="shifts"></div>
-<div class="slotsL">Saved keys (tap empty to save, tap filled to load, ✕ to clear)</div>
+<div class="slotsH"><span class="slotsL">Saved keys</span><button type="button" class="mini" id="eK">Edit</button></div>
 <div class="slots" id="slots"></div>
 </div>
 
@@ -184,7 +192,7 @@ $('tE').onclick=function(){mode=1;update()};
 $('tD').onclick=function(){mode=-1;update()};
 key.oninput=update;inp.oninput=update;
 
-var SK='aceCipherSlots',slots=[];
+var SK='aceCipherSlots',slots=[],edK=false,edC=false;
 function loadSlots(){
   try{var a=JSON.parse(localStorage.getItem(SK));if(Array.isArray(a)&&a.length===10)return a.map(function(v){return String(v||'').replace(/[^A-Z]/g,'')})}catch(e){}
   return ['','','','','','','','','',''];
@@ -193,18 +201,19 @@ function saveSlots(){try{localStorage.setItem(SK,JSON.stringify(slots))}catch(e)
 function renderSlots(){
   var h='';
   slots.forEach(function(v,i){
-    if(v)h+='<div class="slot f" data-i="'+i+'" role="button" tabindex="0" title="'+v+'">'+v+'<span class="x" data-x="'+i+'">✕</span></div>';
+    if(v)h+='<div class="slot f" data-i="'+i+'" role="button" tabindex="0" title="'+v+'">'+v+'</div>';
     else h+='<div class="slot" data-i="'+i+'" role="button" tabindex="0">+ Save</div>';
   });
   $('slots').innerHTML=h;
 }
 function slotAct(e){
-  var x=e.target.closest?e.target.closest('[data-x]'):null;
-  if(x){slots[+x.getAttribute('data-x')]='';saveSlots();renderSlots();return}
+
+
   var s=e.target.closest?e.target.closest('.slot'):null;
   if(!s)return;
   var i=+s.getAttribute('data-i');
-  if(slots[i]){key.value=slots[i];update()}
+  if(slots[i]&&edK){slots[i]='';saveSlots();renderSlots()}
+  else if(slots[i]){key.value=slots[i];update()}
   else{
     var v=key.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,30);
     if(!v)return;
@@ -278,6 +287,34 @@ $('mHex').onclick=function(){setMode('hex')};
 $('mRgb').onclick=function(){setMode('rgb')};
 var pm='hex';try{pm=localStorage.getItem('aceCipherPickMode')||'hex'}catch(e){}
 setMode(pm==='rgb'?'rgb':'hex');
+
+var CK='aceCipherColors',cols=[];
+function loadCols(){
+  try{var a=JSON.parse(localStorage.getItem(CK));if(Array.isArray(a)&&a.length===5)return a.map(function(v){return /^#[0-9a-fA-F]{6}$/.test(v||'')?v:''})}catch(e){}
+  return ['','','','',''];
+}
+function saveCols(){try{localStorage.setItem(CK,JSON.stringify(cols))}catch(e){}}
+function renderCols(){
+  var h='';
+  cols.forEach(function(v,i){
+    if(v)h+='<div class="slot f" data-c="'+i+'" role="button" tabindex="0" style="background:'+v+'" title="'+v+'"></div>';
+    else h+='<div class="slot" data-c="'+i+'" role="button" tabindex="0">+ Save</div>';
+  });
+  $('cslots').innerHTML=h;
+}
+$('cslots').addEventListener('click',function(e){
+
+
+  var s=e.target.closest('.slot');
+  if(!s)return;
+  var i=+s.getAttribute('data-c');
+  if(cols[i]&&edC){cols[i]='';saveCols();renderCols()}
+  else if(cols[i])setHex(cols[i],true);
+  else{cols[i]=hsv2hex(H,S,V);saveCols();renderCols()}
+});
+cols=loadCols();renderCols();
+$('eK').onclick=function(){edK=!edK;this.textContent=edK?'Done':'Edit';this.className='mini'+(edK?' on':'');$('slots').className='slots'+(edK?' ed':'')};
+$('eC').onclick=function(){edC=!edC;this.textContent=edC?'Done':'Edit';this.className='mini'+(edC?' on':'');$('cslots').className='slots'+(edC?' ed':'')};
 $('thr').onclick=function(){setHex(DEF,false);try{localStorage.removeItem(TK)}catch(e){}};
 var st0=null;try{st0=localStorage.getItem(TK)}catch(e){}
 setHex(/^#[0-9a-fA-F]{6}$/.test(st0||'')?st0:DEF,false);
