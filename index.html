@@ -22,13 +22,14 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0a0a;--card:#141414;--ink:#f5f1f0;--mute:#a58f8c;--line:#3a1515;--acc:#e11d2a;--acc-ink:#fff;--field:#0e0e0e;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#0a0a0a;--card:#141414;--ink:#f5f1f0;--mute:#a58f8c;--line:#3a1515;--acc:#e11d2a;--acc-ink:#fff;--field:#0e0e0e;color-scheme:dark}
 *{box-sizing:border-box}
+button,.slot,.swatch,.pmode button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
 h1{font:700 2rem/1.1 Georgia,"Times New Roman",serif;margin:8px 0 4px;letter-spacing:-.01em}
 h1 span{color:var(--acc)}
 h1{overflow-wrap:anywhere}
 p.sub{margin:0 0 18px;color:var(--mute);font-size:.95rem}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 0 18px rgba(225,29,42,.08)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 0 18px var(--glow,rgba(225,29,42,.08))}
 label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin-bottom:6px}
 textarea,input{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 textarea{min-height:110px;resize:vertical}
@@ -46,12 +47,43 @@ textarea:focus,input:focus{outline:2px solid var(--acc);outline-offset:1px}
 .grid div{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:5px 0;text-align:center}
 .grid div.k{border-color:var(--acc);color:var(--acc);font-weight:700}
 details summary{cursor:pointer;font-weight:600}
+.theme{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.theme label{margin:0;flex:1}
+.swatch{width:56px;height:40px;border-radius:10px;border:1px solid var(--line);background:#e11d2a;cursor:pointer;padding:0}
+.picker{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:-4px 0 14px}
+.picker svg#sv{width:100%;height:auto;border-radius:10px;touch-action:none;cursor:crosshair;display:block}
+.picker svg#sv circle{pointer-events:none}
+.picker input[type=range]{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;border:0;padding:0;margin:14px 0 12px;background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+.picker input[type=range]::-webkit-slider-runnable-track{height:14px;background:transparent;border-radius:8px}
+.picker input[type=range]::-moz-range-track{height:14px;background:transparent;border-radius:8px}
+.picker input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-6px;border-radius:50%;background:var(--ink);border:3px solid var(--card);box-shadow:0 0 0 1px var(--line)}
+.picker input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ink);border:3px solid var(--card)}
+.picker input[type=text]{font-family:ui-monospace,Menlo,Consolas,monospace}
+.pmode{display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:10px}
+.pmode button{flex:1;border:0;background:transparent;color:var(--mute);font-size:.85rem;font-weight:600;font-family:inherit;padding:7px;border-radius:8px;cursor:pointer}
+.pmode button.on{background:var(--acc);color:var(--acc-ink)}
+.rgb{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rgb[hidden]{display:none}
+.rgb label{margin:0;display:flex;align-items:center;gap:6px;font-size:.85rem;text-transform:none;letter-spacing:0;color:var(--mute)}
+.rgb input{padding:8px 4px;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;min-width:0}
+.theme .btn{flex:0 0 auto;min-width:0;padding:8px 14px}
+.slotsL{margin-top:14px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.slot{position:relative;min-height:46px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);background:var(--field);color:var(--mute);border-radius:10px;font:600 .75rem ui-monospace,Menlo,Consolas,monospace;cursor:pointer;padding:6px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;user-select:none;-webkit-user-select:none}
+.slot.f{border-style:solid;border-color:var(--acc);color:var(--ink)}
+.slot .x{position:absolute;top:0;right:0;padding:7px 9px;font-size:.75rem;line-height:1;color:var(--mute)}
+@media (max-width:420px){main{padding:16px 12px 32px}.card{padding:14px}.slot{font-size:.7rem;min-height:48px}}
+.slot .x:hover{color:var(--acc)}
 </style>
 </head>
 <body>
 <main>
 <h1><span id="ttl" style="color:var(--ink)">Ace</span> <span>Cipher</span></h1>
 <p class="sub">A Caesar cipher where each shift comes from letter order: A=1, B=2, C=3 … Z=26.</p>
+<div class="theme"><label for="thm">Theme color</label><button type="button" id="thm" class="swatch" aria-label="Theme color"></button><button class="btn" id="thr" type="button">Reset</button></div>
+<div class="picker" id="pk" hidden><svg id="sv" viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000"/></linearGradient></defs><rect id="svh" width="280" height="150" fill="#f00"/><rect width="280" height="150" fill="url(#gw)"/><rect width="280" height="150" fill="url(#gb)"/><circle id="m1" r="10" fill="none" stroke="#000" stroke-width="1.5"/><circle id="m2" r="8" fill="none" stroke="#fff" stroke-width="3"/></svg><input type="range" id="hue" min="0" max="360" value="0" aria-label="Hue"><div class="pmode"><button type="button" id="mHex" class="on">Hex</button><button type="button" id="mRgb">RGB</button></div>
+<input type="text" id="hx" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color">
+<div class="rgb" id="rgbBox" hidden><label>R<input type="number" id="rr" min="0" max="255" inputmode="numeric" aria-label="Red"></label><label>G<input type="number" id="gg" min="0" max="255" inputmode="numeric" aria-label="Green"></label><label>B<input type="number" id="bb" min="0" max="255" inputmode="numeric" aria-label="Blue"></label></div></div>
 
 <div class="tabs" role="tablist">
 <button id="tE" class="on" type="button">Encode</button>
@@ -62,6 +94,8 @@ details summary{cursor:pointer;font-weight:600}
 <label for="key">Key (letters set the shifts)</label>
 <input id="key" value="ACE" autocapitalize="characters" autocomplete="off" spellcheck="false">
 <div class="shifts" id="shifts"></div>
+<div class="slotsL">Saved keys (tap empty to save, tap filled to load, ✕ to clear)</div>
+<div class="slots" id="slots"></div>
 </div>
 
 <div class="card">
@@ -149,6 +183,107 @@ function update(){
 $('tE').onclick=function(){mode=1;update()};
 $('tD').onclick=function(){mode=-1;update()};
 key.oninput=update;inp.oninput=update;
+
+var SK='aceCipherSlots',slots=[];
+function loadSlots(){
+  try{var a=JSON.parse(localStorage.getItem(SK));if(Array.isArray(a)&&a.length===10)return a.map(function(v){return String(v||'').replace(/[^A-Z]/g,'')})}catch(e){}
+  return ['','','','','','','','','',''];
+}
+function saveSlots(){try{localStorage.setItem(SK,JSON.stringify(slots))}catch(e){}}
+function renderSlots(){
+  var h='';
+  slots.forEach(function(v,i){
+    if(v)h+='<div class="slot f" data-i="'+i+'" role="button" tabindex="0" title="'+v+'">'+v+'<span class="x" data-x="'+i+'">✕</span></div>';
+    else h+='<div class="slot" data-i="'+i+'" role="button" tabindex="0">+ Save</div>';
+  });
+  $('slots').innerHTML=h;
+}
+function slotAct(e){
+  var x=e.target.closest?e.target.closest('[data-x]'):null;
+  if(x){slots[+x.getAttribute('data-x')]='';saveSlots();renderSlots();return}
+  var s=e.target.closest?e.target.closest('.slot'):null;
+  if(!s)return;
+  var i=+s.getAttribute('data-i');
+  if(slots[i]){key.value=slots[i];update()}
+  else{
+    var v=key.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,30);
+    if(!v)return;
+    slots[i]=v;saveSlots();renderSlots();
+  }
+}
+$('slots').addEventListener('click',slotAct);
+slots=loadSlots();renderSlots();
+
+var TK='aceCipherTheme',DEF='#e11d2a';
+function applyTheme(hex){
+  var r=parseInt(hex.substr(1,2),16),g=parseInt(hex.substr(3,2),16),b=parseInt(hex.substr(5,2),16);
+  var n=0;
+  while((0.299*r+0.587*g+0.114*b)<80&&n<12){r=Math.min(255,r+22);g=Math.min(255,g+22);b=Math.min(255,b+22);n++}
+  var lum=0.299*r+0.587*g+0.114*b,st=document.documentElement.style;
+  st.setProperty('--acc','rgb('+r+','+g+','+b+')');
+  st.setProperty('--acc-ink',lum>150?'#0a0a0a':'#ffffff');
+  st.setProperty('--line','rgb('+Math.round(r*.22)+','+Math.round(g*.22)+','+Math.round(b*.22)+')');
+  st.setProperty('--glow','rgba('+r+','+g+','+b+',.1)');
+}
+var thm=$('thm'),pk=$('pk'),sv=$('sv'),hue=$('hue'),hx=$('hx'),H=0,S=.86,V=.88,drag=false;
+function hsv2hex(h,s,v){
+  var f=function(n){var k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};
+  return '#'+[f(5),f(3),f(1)].map(function(x){var t=Math.round(x*255).toString(16);return t.length<2?'0'+t:t}).join('');
+}
+function hex2hsv(x){
+  var r=parseInt(x.substr(1,2),16)/255,g=parseInt(x.substr(3,2),16)/255,b=parseInt(x.substr(5,2),16)/255;
+  var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,h=0;
+  if(d){if(mx===r)h=((g-b)/d+6)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60}
+  return [h,mx?d/mx:0,mx];
+}
+function drawSV(){
+  $('svh').setAttribute('fill',hsv2hex(H,1,1));
+  var x=S*280,y=(1-V)*150;
+  ['m1','m2'].forEach(function(id){var m=$(id);m.setAttribute('cx',x);m.setAttribute('cy',y)});
+}
+function commit(save){
+  var x=hsv2hex(H,S,V);applyTheme(x);thm.style.background=x;hx.value=x;
+  [['rr',1],['gg',3],['bb',5]].forEach(function(p){var el=$(p[0]);if(document.activeElement!==el)el.value=parseInt(x.substr(p[1],2),16)});
+  if(save){try{localStorage.setItem(TK,x)}catch(e){}}
+  drawSV();
+}
+function setHex(x,save){var a=hex2hsv(x);H=a[0];S=a[1];V=a[2];hue.value=Math.round(H);commit(save)}
+function pickSV(e){
+  var r=sv.getBoundingClientRect();
+  S=Math.min(Math.max(e.clientX-r.left,0),r.width)/r.width;
+  V=1-Math.min(Math.max(e.clientY-r.top,0),r.height)/r.height;
+  commit(true);
+}
+sv.addEventListener('pointerdown',function(e){drag=true;try{sv.setPointerCapture(e.pointerId)}catch(x){}pickSV(e)});
+sv.addEventListener('pointermove',function(e){if(drag)pickSV(e)});
+sv.addEventListener('pointerup',function(){drag=false});
+sv.addEventListener('pointercancel',function(){drag=false});
+sv.addEventListener('lostpointercapture',function(){drag=false});
+hue.addEventListener('input',function(){H=+hue.value;commit(true)});
+hx.addEventListener('input',function(){var t=hx.value.trim();if(t.charAt(0)!=='#')t='#'+t;if(/^#[0-9a-fA-F]{6}$/.test(t))setHex(t,true)});
+thm.addEventListener('click',function(){pk.hidden=!pk.hidden;if(!pk.hidden)drawSV()});
+function rgbIn(){
+  var v=['rr','gg','bb'].map(function(id){var n=parseInt($(id).value,10);return isNaN(n)?null:Math.max(0,Math.min(255,n))});
+  if(v.indexOf(null)>-1)return;
+  setHex('#'+v.map(function(n){var t=n.toString(16);return t.length<2?'0'+t:t}).join(''),true);
+}
+['rr','gg','bb'].forEach(function(id){$(id).addEventListener('input',rgbIn)});
+function setMode(m){
+  var rgb=m==='rgb';
+  $('rgbBox').hidden=!rgb;hx.hidden=rgb;
+  $('mHex').className=rgb?'':'on';$('mRgb').className=rgb?'on':'';
+  try{localStorage.setItem('aceCipherPickMode',m)}catch(e){}
+}
+$('mHex').onclick=function(){setMode('hex')};
+$('mRgb').onclick=function(){setMode('rgb')};
+var pm='hex';try{pm=localStorage.getItem('aceCipherPickMode')||'hex'}catch(e){}
+setMode(pm==='rgb'?'rgb':'hex');
+$('thr').onclick=function(){setHex(DEF,false);try{localStorage.removeItem(TK)}catch(e){}};
+var st0=null;try{st0=localStorage.getItem(TK)}catch(e){}
+setHex(/^#[0-9a-fA-F]{6}$/.test(st0||'')?st0:DEF,false);
+
+
+
 $('clr').onclick=function(){inp.value='';update();inp.focus()};
 $('sw').onclick=function(){inp.value=out.textContent;mode=-mode;update()};
 $('cp').onclick=function(){
