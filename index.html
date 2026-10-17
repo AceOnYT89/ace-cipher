@@ -48,6 +48,11 @@ textarea:focus,input:focus{outline:2px solid var(--acc);outline-offset:1px}
 .grid div{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:5px 0;text-align:center}
 .grid div.k{border-color:var(--acc);color:var(--acc);font-weight:700}
 details summary{cursor:pointer;font-weight:600}
+.row select{flex:1;min-width:120px;font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.bfnote{margin:10px 0 0;color:var(--mute);font-size:.9rem}
+.bfi{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--field);border-radius:10px;padding:10px 12px;margin-top:8px}
+.bfk{font:700 1rem ui-monospace,Menlo,Consolas,monospace;color:var(--acc);min-width:46px}
+.bft{flex:1;min-width:0;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem}
 .theme{display:flex;align-items:center;gap:10px;margin:0 0 14px}
 .theme label{margin:0;flex:1}
 .swatch{width:56px;height:40px;border-radius:10px;border:1px solid var(--line);background:#e11d2a;cursor:pointer;padding:0}
@@ -121,6 +126,18 @@ details summary{cursor:pointer;font-weight:600}
 <button class="btn" id="cp" type="button">Copy</button>
 <button class="btn" id="sw" type="button">Use as input ⇄</button>
 </div>
+</div>
+
+<div class="card">
+<label for="bfIn">Find the key (paste coded text)</label>
+<textarea id="bfIn" placeholder="Paste coded text here…" spellcheck="false"></textarea>
+<input id="bfHint" type="text" placeholder="Optional: a word you think is in the message" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-top:10px">
+<div class="row">
+
+<button class="btn" id="bfGo" type="button">Find the key</button>
+</div>
+<p class="bfnote">Tries every short key and picks the one whose result reads like English. Long key on a short message? Type a word you think is in it (like hello or the, up to 3 words) and it works out the key from that.</p>
+<div id="bfOut"></div>
 </div>
 
 <div class="card">
@@ -315,6 +332,173 @@ $('cslots').addEventListener('click',function(e){
 cols=loadCols();renderCols();
 $('eK').onclick=function(){edK=!edK;this.textContent=edK?'Done':'Edit';this.className='mini'+(edK?' on':'');$('slots').className='slots'+(edK?' ed':'')};
 $('eC').onclick=function(){edC=!edC;this.textContent=edC?'Done':'Edit';this.className='mini'+(edC?' on':'');$('cslots').className='slots'+(edC?' ed':'')};
+
+var EF=[8.167,1.492,2.782,4.253,12.702,2.228,2.015,6.094,6.966,0.153,0.772,4.025,2.406,6.749,7.507,1.929,0.095,5.987,6.327,9.056,2.758,0.978,2.360,0.150,1.974,0.074];
+function chi(L,sh){
+  var c=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],k=sh.length,i;
+  for(i=0;i<L.length;i++)c[(L[i]-sh[i%k]%26+26)%26]++;
+  var x=0;
+  for(i=0;i<26;i++){var e=EF[i]*L.length/100;x+=(c[i]-e)*(c[i]-e)/e}
+  return x;
+}
+function words(t){var m=t.toLowerCase().match(/\b(the|and|that|you|with|have|for|this|are|not)\b/g);return m?m.length:0}
+function bfMsg(t){var o=$('bfOut');o.innerHTML='';var p=document.createElement('p');p.className='bfnote';p.textContent=t;o.appendChild(p)}
+function z26(){var a=[],k;for(k=0;k<26;k++)a.push(0);return a}
+function icOf(c,m){if(m<2)return 0;var s=0,i;for(i=0;i<26;i++)s+=c[i]*(c[i]-1);return s/(m*(m-1))}
+function keyStr(sh){return sh.map(function(v){return String.fromCharCode(64+v)}).join('')}
+function solve(L,len){
+  var sh=[],j,i,col,s,bs,bv,x,p;
+  for(j=0;j<len;j++){
+    col=[];for(i=j;i<L.length;i+=len)col.push(L[i]);
+    bv=1e12;bs=1;
+    for(s=1;s<=26;s++){x=chi(col,[s]);if(x<bv){bv=x;bs=s}}
+    sh.push(bs);
+  }
+  for(p=1;p<len;p++){if(len%p===0&&sh.every(function(v,k){return v===sh[k%p]}))return sh.slice(0,p)}
+  return sh;
+}
+function bfItem(ks,t,raw,big){
+  var d=document.createElement('div');d.className='bfi';
+  var a=document.createElement('span');a.className='bfk';a.textContent=ks;if(big)a.style.fontSize='1.3rem';
+  var b=document.createElement('span');b.className='bft';b.textContent=big?t:(t.length>100?t.slice(0,100)+'…':t);
+  var u=document.createElement('button');u.type='button';u.className='mini';u.textContent='Use';
+  u.onclick=function(){key.value=ks;mode=-1;inp.value=raw;update();window.scrollTo({top:0,behavior:'smooth'})};
+  d.appendChild(a);d.appendChild(b);d.appendChild(u);
+  return d;
+}
+var WL=('the be to of and a in that have i it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us is are was were been has had am here where why yes hello hey meet noon night morning evening bridge old map found others leave before storm arrives arrive bring must going guards guard watch road every ask many questions pack food water wear warm clothes tell plan until comes town quiet again nobody secret code message hidden door key tonight tomorrow today love friend friends home thanks please sorry happy great little long very much more last never always still need feel keep let begin seem help talk turn start might show hear play run move live believe hold happen write provide sit stand lose pay include continue set learn change lead understand follow stop create speak read allow add spend grow open walk win offer remember consider appear buy wait serve send expect build stay fall cut reach remain are were those while through between each both few same another large small high different own right left again off should call place hand part child eye life week case point government company number group problem fact man woman world school state family student country city name end bad big best better am im dont cant wont lets thats whats').split(' ');
+var WS={};WL.forEach(function(w){WS[w]=1});
+function cover(t){
+  var ws=t.toLowerCase().match(/[a-z]+/g)||[],hit=0,tot=0;
+  ws.forEach(function(w){tot+=w.length;if(WS[w])hit+=w.length});
+  return tot?hit/tot:0;
+}
+var BG={};('th he in er an re on at en nd ti es or te of ed is it al ar st to nt ng se ha as ou io le ve co me de hi ri ro ic ne ea ra ce li ch ll be ma si om ur ca el ta la ns di fo ho pe ec pr no ct us ac ot il tr ly nc et ut ss so rs un lo wa ge ie wh ee wi em ad ol rt po we na ul ni ts mo ow pa im mi ai sh ir su id os iv ia am fi ci vi pl ig tu ev ld ry mp fe bl ab gh ty op wo sa ay ex ke fr oo av ag if ck ef bu ee ob ba bo br ew ye dy gr gi gu ki ey aw').split(' ').forEach(function(b){BG[b]=1});
+function bigr(t){
+  var ws=t.toLowerCase().match(/[a-z]+/g)||[],h=0,tot=0;
+  ws.forEach(function(w){for(var i=0;i<w.length-1;i++){tot++;if(BG[w.substr(i,2)])h++}});
+  return tot?h/tot:0;
+}
+function periodic(sh){
+  var n=sh.length,p;
+  for(p=1;p<n;p++){if(n%p===0&&sh.every(function(v,i){return v===sh[i%p]}))return true}
+  return false;
+}
+function findKey(raw){
+  var L=[],i;
+  for(i=0;i<raw.length;i++){var ch=raw.charAt(i);if(/[A-Za-z]/.test(ch))L.push(ch.toUpperCase().charCodeAt(0)-65)}
+  var n=L.length;
+  if(n<6)return null;
+  var spaced=(raw.match(/[A-Za-z]+/g)||[]).length>=3;
+  var maxLen=n<=80?4:3,T=300,cands=[],len,e=[],c=[],k;
+  for(k=0;k<26;k++)e.push(EF[k]*n/100);
+  for(len=1;len<=maxLen;len++){
+    var total=Math.pow(26,len),pool=[],sh=[],a,b,d,m,j,x,t;
+    for(a=0;a<len;a++)sh.push(1);
+    for(m=0;m<total;m++){
+      t=m;for(j=len-1;j>=0;j--){sh[j]=t%26+1;t=Math.floor(t/26)}
+      if(len>1&&periodic(sh))continue;
+      c=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+      for(i=0;i<n;i++)c[(L[i]-sh[i%len]+26)%26]++;
+      x=0;for(k=0;k<26;k++){d=c[k]-e[k];x+=d*d/e[k]}
+      pool.push([x,sh.slice()]);
+      if(pool.length>T*3){pool.sort(function(p,q){return p[0]-q[0]});pool.length=T}
+    }
+    pool.sort(function(p,q){return p[0]-q[0]});
+    pool.slice(0,T).forEach(function(p){cands.push(p[1])});
+  }
+  if(n>=40){for(len=4;len<=12;len++){cands.push(solve(L,len))}}
+  var seen={},res=[];
+  cands.forEach(function(sh){
+    var ks=keyStr(sh);if(seen[ks])return;seen[ks]=1;
+    var t=run(raw,sh,-1),cx=chi(L,sh)/n;
+    var cv=cover(t),bg=bigr(t);
+    var sc=spaced?100*cv+80*bg-8*cx-0.3*sh.length:80*bg-10*cx-0.02*sh.length;
+    res.push({ks:ks,sh:sh,t:t,sc:sc,cov:cv,bg:bg,cx:cx});
+  });
+  res.sort(function(p,q){return q.sc-p.sc});
+  var best=res[0],conf;
+  var kl=best.sh.length;
+  if(spaced)conf=best.cov>=0.55?'High':(best.cov>=0.4&&kl<=4)||(kl<=3&&best.cov>=0.15&&best.bg>=0.8)?'Medium':'Low';
+  else conf=best.cx<0.35&&n>=60?'High':best.cx<0.6&&n>=40?'Medium':'Low';
+  
+  return {best:best,others:res.slice(1,4),conf:conf,n:n};
+}
+
+function reduceKey(sh){for(var p=1;p<sh.length;p++){if(sh.length%p===0&&sh.every(function(v,i){return v===sh[i%p]}))return sh.slice(0,p)}return sh}
+function findWithCribs(raw,hs){
+  var L=[],ws=[],we=[],i,ch,prev=false;
+  for(i=0;i<raw.length;i++){
+    ch=raw.charAt(i);
+    if(/[A-Za-z]/.test(ch)){L.push(ch.toUpperCase().charCodeAt(0)-65);ws.push(!prev);we.push(false);prev=true}
+    else{if(prev)we[we.length-1]=true;prev=false}
+  }
+  if(prev)we[we.length-1]=true;
+  var n=L.length,H=hs.map(function(w){return w.split('').map(function(c){return c.charCodeAt(0)-97})});
+  if(n<4)return null;
+  var spaced=(raw.match(/[A-Za-z]+/g)||[]).length>=3,res=[],seen={},calls=0;
+  function finish(part,al,k){
+    if(calls++>40000)return;
+    var sh=part.slice(),c,j,s,x;
+    for(c=0;c<k;c++){
+      if(!sh[c]){
+        var col=[],bs=1,bv=1e12;
+        for(j=c;j<n;j+=k)col.push(L[j]);
+        if(col.length){for(s=1;s<=26;s++){x=chi(col,[s]);if(x<bv){bv=x;bs=s}}}
+        sh[c]=bs;
+      }
+    }
+    sh=reduceKey(sh);
+    var ks=keyStr(sh);
+    if(seen[ks])return;
+    seen[ks]=1;
+    var t=run(raw,sh,-1),cv=cover(t),bg=bigr(t),cx=chi(L,sh)/n;
+    var sc=spaced?100*cv+80*bg-8*cx+15*al-0.3*sh.length:80*bg-10*cx+15*al-0.02*sh.length;
+    res.push({ks:ks,sh:sh,t:t,sc:sc,cov:cv,bg:bg,cx:cx});
+  }
+  function dfs(i,part,al,k,aligned){
+    if(calls>40000)return;
+    if(i===H.length){finish(part,al,k);return}
+    var h=H[i],m=h.length,g,j,p2,ok,col,s,a;
+    for(g=0;g+m<=n;g++){
+      a=ws[g]&&we[g+m-1];
+      if(aligned&&!a)continue;
+      p2=part.slice();ok=true;
+      for(j=0;j<m;j++){
+        col=(g+j)%k;s=(L[g+j]-h[j]+26)%26||26;
+        if(p2[col]&&p2[col]!==s){ok=false;break}
+        p2[col]=s;
+      }
+      if(ok)dfs(i+1,p2,al+(a?1:0),k,aligned);
+    }
+  }
+  function search(aligned){
+    var k,z,q;
+    for(k=1;k<=12;k++){z=[];for(q=0;q<k;q++)z.push(0);dfs(0,z,0,k,aligned)}
+  }
+  search(spaced);
+  if(!res.length||(spaced&&Math.max.apply(null,res.map(function(r){return r.cov}))<0.4)){calls=0;search(false)}
+  if(!res.length)return null;
+  res.sort(function(p,q){return q.sc-p.sc});
+  var best=res[0],kl=best.sh.length,conf;
+  if(spaced)conf=best.cov>=0.55?'High':(best.cov>=0.4&&kl<=4)||(kl<=3&&best.cov>=0.15&&best.bg>=0.8)?'Medium':'Low';
+  else conf=best.cx<0.35&&n>=60?'High':best.cx<0.6&&n>=40?'Medium':'Low';
+  return {best:best,others:res.slice(1,4),conf:conf,n:n,spaced:spaced};
+}
+function crack(){
+  var raw=$('bfIn').value,hs=($('bfHint').value.toLowerCase().match(/[a-z]{2,}/g)||[]).slice(0,3),r=hs.length?findWithCribs(raw,hs):null;
+  if(!r||r.conf==='Low')r=findKey(raw)||r;
+  if(!r){bfMsg('Paste a bit more coded text (at least a few letters).');return}
+  var main=r.best,out=$('bfOut');
+  if(r.conf==='High'){key.value=main.ks;mode=-1;inp.value=raw;update()}
+  out.innerHTML='';
+  var p=document.createElement('p');p.className='bfnote';
+  p.textContent=r.conf==='High'?'Key found, and it is now set in the decoder above.':r.conf==='Medium'?'Possible key, but not certain, so nothing was changed above. Check that the text reads right, then tap Use. Other guesses are below.':'No clearly readable result, so nothing was changed above. This message is probably too short for its key. Longer keys need roughly 25 letters of text per key letter. These are the best guesses, but treat them as unreliable.';
+  out.appendChild(p);
+  out.appendChild(bfItem(main.ks,main.t,raw,true));
+  if(r.conf!=='High')r.others.forEach(function(o){out.appendChild(bfItem(o.ks,o.t,raw,false))});
+}
+$('bfGo').onclick=function(){bfMsg('Working…');setTimeout(crack,30)};
 $('thr').onclick=function(){setHex(DEF,false);try{localStorage.removeItem(TK)}catch(e){}};
 var st0=null;try{st0=localStorage.getItem(TK)}catch(e){}
 setHex(/^#[0-9a-fA-F]{6}$/.test(st0||'')?st0:DEF,false);
