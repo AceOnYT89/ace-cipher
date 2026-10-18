@@ -136,7 +136,7 @@ details summary{cursor:pointer;font-weight:600}
 
 <button class="btn" id="bfGo" type="button">Find the key</button>
 </div>
-<p class="bfnote">Tries every short key and picks the one whose result reads like English. Long key on a short message? Type a word you think is in it (like hello or the, up to 3 words) and it works out the key from that.</p>
+<p class="bfnote">Works out the key by finding which English words fit your coded words, so it handles long keys on short messages when the text has real words and spaces. You can also type a word you think is in the message to help it.</p>
 <div id="bfOut"></div>
 </div>
 
@@ -439,13 +439,13 @@ function findWithCribs(raw,hs){
   var spaced=(raw.match(/[A-Za-z]+/g)||[]).length>=3,res=[],seen={},calls=0;
   function finish(part,al,k){
     if(calls++>40000)return;
-    var sh=part.slice(),c,j,s,x;
+    var sh=part.slice(),c,j,s,x,unk=[];
     for(c=0;c<k;c++){
       if(!sh[c]){
         var col=[],bs=1,bv=1e12;
         for(j=c;j<n;j+=k)col.push(L[j]);
         if(col.length){for(s=1;s<=26;s++){x=chi(col,[s]);if(x<bv){bv=x;bs=s}}}
-        sh[c]=bs;
+        sh[c]=bs;unk.push(c);
       }
     }
     sh=reduceKey(sh);
@@ -454,7 +454,7 @@ function findWithCribs(raw,hs){
     seen[ks]=1;
     var t=run(raw,sh,-1),cv=cover(t),bg=bigr(t),cx=chi(L,sh)/n;
     var sc=spaced?100*cv+80*bg-8*cx+15*al-0.3*sh.length:80*bg-10*cx+15*al-0.02*sh.length;
-    res.push({ks:ks,sh:sh,t:t,sc:sc,cov:cv,bg:bg,cx:cx});
+    res.push({ks:ks,sh:sh,t:t,sc:sc,cov:cv,bg:bg,cx:cx,part:part.slice(),unk:unk,k:k,al:al});
   }
   function dfs(i,part,al,k,aligned){
     if(calls>40000)return;
@@ -480,14 +480,122 @@ function findWithCribs(raw,hs){
   if(!res.length||(spaced&&Math.max.apply(null,res.map(function(r){return r.cov}))<0.4)){calls=0;search(false)}
   if(!res.length)return null;
   res.sort(function(p,q){return q.sc-p.sc});
+  var tops=res.slice(0,3).filter(function(r){return r.unk.length>=1&&r.unk.length<=3}),extra=[];
+  tops.forEach(function(r){
+    var u=r.unk,total=Math.pow(26,u.length),m,j,t,sh,s2,ks,tx,cv,bg,cx,sc;
+    for(m=0;m<total;m++){
+      sh=r.part.slice();t=m;
+      for(j=0;j<u.length;j++){sh[u[j]]=t%26+1;t=Math.floor(t/26)}
+      s2=reduceKey(sh);ks=keyStr(s2);
+      if(seen[ks])continue;
+      seen[ks]=1;
+      tx=run(raw,s2,-1);cv=cover(tx);bg=bigr(tx);cx=chi(L,s2)/n;
+      sc=spaced?100*cv+80*bg-8*cx+15*r.al-0.3*s2.length:80*bg-10*cx+15*r.al-0.02*s2.length;
+      if(extra.length<6||sc>extra[extra.length-1].sc){
+        extra.push({ks:ks,sh:s2,t:tx,sc:sc,cov:cv,bg:bg,cx:cx,part:r.part,unk:[],k:r.k,al:r.al});
+        extra.sort(function(p,q){return q.sc-p.sc});
+        if(extra.length>6)extra.length=6;
+      }
+    }
+  });
+  res=res.concat(extra);
+  res.sort(function(p,q){return q.sc-p.sc});
   var best=res[0],kl=best.sh.length,conf;
   if(spaced)conf=best.cov>=0.55?'High':(best.cov>=0.4&&kl<=4)||(kl<=3&&best.cov>=0.15&&best.bg>=0.8)?'Medium':'Low';
   else conf=best.cx<0.35&&n>=60?'High':best.cx<0.6&&n>=40?'Medium':'Low';
   return {best:best,others:res.slice(1,4),conf:conf,n:n,spaced:spaced};
 }
+var EXTRA=('ok okay yeah yep nope lol omg hi hey bye dude bro man guys guy girl boy kid kids mom dad mum son wife husband baby sir miss mr mrs cool nice fun funny sad mad bad glad sure fine true false real fake wrong right easy hard fast slow late early soon later now once twice again always never maybe really actually literally totally pretty quite just even also too very much many lot lots some any each every both few more most less least own same other another such only then than so thus yet still already ever far near close open shut empty full heavy light dark bright cold hot warm cool wet dry clean dirty new old young big small tiny huge long short tall low high deep wide thin thick fat strong weak rich poor free busy ready safe dead alive sick well healthy hungry tired sleepy angry scared brave kind rude quiet loud sweet bitter sour fresh dear lovely beautiful pretty ugly smart clever stupid silly crazy weird strange normal special best worst better worse bigger smaller food water bread milk cake pie cookie cookies candy sugar salt pepper rice meat fish chicken egg eggs fruit apple apples banana orange lemon pizza burger fries soup salad coffee tea juice beer wine cup glass plate bowl fork knife spoon table chair bed room house home door window floor wall roof kitchen garden yard street road street city town village country world earth sky sun moon star stars cloud clouds rain snow wind storm fire ice tree trees flower flowers grass river lake sea ocean beach mountain hill forest field park school class teacher student book books paper pen pencil bag box ball game games toy phone computer screen video music song songs movie movies show picture photo camera car cars bus train plane boat bike ride walk run jump swim fly drive sit stand sleep wake eat drink cook buy sell pay cost price money cash bank job work works worked working boss office team meeting email letter message messages text call calls send sent got get gets getting give gave given take took taken make made makes making put set let see saw seen look looks looked watch watched hear heard listen say said says tell told ask asked answer reply talk talked speak spoke read write wrote written learn taught teach know knew known think thought believe feel felt want wanted need needed like liked love loved hate hated enjoy hope wish wait waited stay stayed leave left came come goes went gone going arrive arrived return back bring brought carry find found lose lost keep kept hold held open opened close closed start started begin began stop stopped end ended finish finished try tried help helped use used call called move moved play played turn turned change changed happen happened mean meant seem seemed become became remember forget forgot understand follow follows meet met join visit invite share save pick choose chose win won beat fight kill hurt break broke fix fixed build built create draw paint dance sing laugh cry smile kiss hug thank thanks sorry please welcome hello goodbye morning afternoon evening night today tomorrow yesterday week weekend month year years hour minute second monday tuesday wednesday thursday friday saturday sunday january february march april june july august september october november december spring summer autumn winter birthday party gift gifts holiday trip travel vacation hotel airport ticket map plan plans idea ideas problem question questions answer reason story stories news secret secrets code codes key keys password lock locked hidden hide found treasure bridge castle tower gate wall guard guards soldier king queen prince princess knight dragon magic spell sword shield enemy friend friends family people person everyone everybody someone somebody anyone anybody nobody nothing something anything everything somewhere anywhere nowhere everywhere here there where when why how what which who whom whose because while until before after during since though although unless whether either neither both about above below under over between among through across along around behind beside beyond inside outside into onto from with without within against toward towards upon off out up down away together alone each other herself himself myself yourself itself themselves ourselves mine yours his hers ours theirs this that these those its their them they we us our you your he she it his her him me my i am is are was were be been being have has had having do does did done doing will would shall should can could may might must ought isnt arent wasnt werent didnt doesnt couldnt wouldnt shouldnt havent hasnt hadnt ill youre theyre weve youve ive hes shes id youll theyll wed ya yall gonna wanna gotta kinda sorta dunno cuz tho thru ur u r pls plz thx ty np idk imo btw omg lmao lol ong').split(' ');
+EXTRA.forEach(function(w){if(/^[a-z]+$/.test(w))WS[w]=1});
+var DICT=null;
+function buildDict(){
+  if(DICT)return DICT;
+  DICT={};
+  Object.keys(WS).forEach(function(w){
+    if(w.length<2||w.length>12)return;
+    (DICT[w.length]=DICT[w.length]||[]).push(w.split('').map(function(c){return c.charCodeAt(0)-97}));
+  });
+  return DICT;
+}
+function autoCrib(raw){
+  var L=[],ws=[],i,ch,cur=null;
+  for(i=0;i<raw.length;i++){
+    ch=raw.charAt(i);
+    if(/[A-Za-z]/.test(ch)){if(!cur){cur={off:L.length,len:0};ws.push(cur)}L.push(ch.toUpperCase().charCodeAt(0)-65);cur.len++}
+    else if((ch==="'"||ch==='\u2019')&&cur&&/[A-Za-z]/.test(raw.charAt(i+1)||''))continue;
+    else cur=null;
+  }
+  var n=L.length,D=buildDict();
+  if(n<8||ws.length<2)return null;
+  var words=ws.filter(function(w){return w.len>=2&&D[w.len]}).sort(function(a,b){return b.len-a.len||a.off-b.off});
+  if(words.length<2)return null;
+  var maxSkip=Math.max(1,Math.floor(words.length/3)),leaves=[],nodes=0,CAP=200000,LN26=Math.log(26);
+  function dfs(wi,part,k,M,logD,skipped,u){
+    if(nodes>CAP)return;
+    if(wi===words.length){
+      var r=M-u;
+      if(M<8||r<3)return;
+      leaves.push({lE:logD-r*LN26,part:part.slice(),k:k});
+      if(leaves.length>4000){leaves.sort(function(a,b){return a.lE-b.lE});leaves.length=500}
+      return;
+    }
+    var w=words[wi],m=w.len,list=D[m],q,j,col,s,p2,ok,nu,dw,lg=Math.log(list.length);
+    for(q=0;q<list.length;q++){
+      nodes++;dw=list[q];p2=part.slice();ok=true;nu=u;
+      for(j=0;j<m;j++){
+        col=(w.off+j)%k;s=(L[w.off+j]-dw[j]+26)%26||26;
+        if(p2[col]){if(p2[col]!==s){ok=false;break}}else{p2[col]=s;nu++}
+      }
+      if(ok)dfs(wi+1,p2,k,M+m,logD+lg,skipped,nu);
+    }
+    if(skipped<maxSkip)dfs(wi+1,part,k,M,logD,skipped+1,u);
+  }
+  var k,z;
+  for(k=1;k<=12;k++){nodes=0;
+    z=[];for(i=0;i<k;i++)z.push(0);
+    dfs(0,z,k,0,0,0,0);
+    if(leaves.some(function(l){return l.lE+Math.log(12)<Math.log(0.001)}))break;
+  }
+  if(!leaves.length)return null;
+  leaves.sort(function(a,b){return a.lE-b.lE});
+  var res=[],seen={};
+  function sc(t,sh){return 100*cover(t)+80*bigr(t)-8*chi(L,sh)/n}
+  leaves.slice(0,40).forEach(function(l,li){
+    var sh=l.part.slice(),c,j,s,x,unk=[];
+    for(c=0;c<l.k;c++){
+      if(!sh[c]){
+        var col=[],bs=1,bv=1e12;
+        for(j=c;j<n;j+=l.k)col.push(L[j]);
+        if(col.length){for(s=1;s<=26;s++){x=chi(col,[s]);if(x<bv){bv=x;bs=s}}}
+        sh[c]=bs;unk.push(c);
+      }
+    }
+    if(li<6&&unk.length>=1&&unk.length<=3){
+      var total=Math.pow(26,unk.length),m,t,tt,bestSc=-1e9,bestSh=sh;
+      for(m=0;m<total;m++){
+        var cand=sh.slice();t=m;
+        for(j=0;j<unk.length;j++){cand[unk[j]]=t%26+1;t=Math.floor(t/26)}
+        tt=run(raw,cand,-1);x=sc(tt,cand);
+        if(x>bestSc){bestSc=x;bestSh=cand}
+      }
+      sh=bestSh;
+    }
+    sh=reduceKey(sh);
+    var ks=keyStr(sh);
+    if(seen[ks])return;
+    seen[ks]=1;
+    var t2=run(raw,sh,-1);
+    res.push({ks:ks,sh:sh,t:t2,lE:l.lE,cov:cover(t2),bg:bigr(t2),cx:chi(L,sh)/n});
+  });
+  var best=res[0],E=Math.exp(best.lE)*12;
+  return {best:best,others:res.slice(1,4),conf:E<0.0001?'High':E<0.02?'Medium':'Low',n:n,E:E};
+}
+
 function crack(){
   var raw=$('bfIn').value,hs=($('bfHint').value.toLowerCase().match(/[a-z]{2,}/g)||[]).slice(0,3),r=hs.length?findWithCribs(raw,hs):null;
   if(!r||r.conf==='Low')r=findKey(raw)||r;
+  var au=(!r||r.conf!=='High')?autoCrib(raw):null;
+  if(au&&(!r||au.conf==='High'||(au.conf==='Medium'&&r.conf==='Low')))r=au;
   if(!r){bfMsg('Paste a bit more coded text (at least a few letters).');return}
   var main=r.best,out=$('bfOut');
   if(r.conf==='High'){key.value=main.ks;mode=-1;inp.value=raw;update()}
