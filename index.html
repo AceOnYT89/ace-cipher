@@ -302,6 +302,16 @@ function run(text,ks,dir){
   }
   return res;
 }
+var lastMode;
+function setLabel(id,text){
+  var el=$(id);
+  if(el.__lab===text)return;
+  if(el.__lab===undefined){el.__lab=text;el.textContent=text;return}
+  el.__lab=text;
+  snapOut(el);
+  el.textContent='';el.__v='';
+  paintDiff(el,text,false,28);
+}
 function outText(){return out.__v||''}
 function snapOut(box){
   if(!box.animate||!box.parentNode||!box.offsetWidth)return;
@@ -375,12 +385,14 @@ fadeInput(inp);fadeInput(key);fadeInput($('bfIn'));
 })();
 function update(){
   syncFade(inp);syncFade(key);syncFade($('bfIn'));
+  var swapped=(lastMode!==undefined&&mode!==lastMode);lastMode=mode;
   var ks=shiftsOf(key.value);
   $('shifts').innerHTML=ks.length?'<span class="shl">Shifts</span>'+ks.slice(0,14).map(function(v){return '<span class="chip">+'+v+'</span>'}).join('')+(ks.length>14?'<span class="shl">…</span>':'')+'<span class="shl">repeating</span>':'Enter at least one letter as the key.';
   var nm=key.value.replace(/[^A-Za-z]/g,'');
   nm=nm?nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase():'Ace';
   paintDiff($('ttl'),nm,false,45)
   document.title=nm+' Cipher';
+  if(swapped){if(out.__v)snapOut(out);out.textContent='';out.__v=''}
   paintDiff(out,run(inp.value,ks,mode),true);
   var fl='',fc=0,ft=inp.value,fi,fch,fs,fo;
   if(ks.length){
@@ -395,8 +407,8 @@ function update(){
     }
   }
   $('flow').innerHTML=fl;
-  $('inL').textContent=mode===1?'Plain text':'Cipher text';
-  $('outL').textContent=mode===1?'Cipher text':'Plain text';
+  setLabel('inL',mode===1?'Plain text':'Cipher text');
+  setLabel('outL',mode===1?'Cipher text':'Plain text');
   $('tE').className=mode===1?'on':'';
   $('tD').className=mode===-1?'on':'';
   var ku={};ks.forEach(function(v){ku[v]=1});
