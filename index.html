@@ -175,6 +175,7 @@ details[open]>*:not(summary){animation:dIn .45s ease both}
 .fw.ph-off .fin::placeholder{opacity:0!important}
 .out.ph-off:empty::before{opacity:0!important}
 .card{position:relative}
+h1{position:relative}
 .fw{position:relative;background:rgba(8,8,8,.75);border:1px solid var(--line);border-radius:10px;transition:border-color .2s,box-shadow .2s}
 .fw:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px rgba(225,29,42,.22)}
 @supports (background:color-mix(in srgb,red 10%,blue)){.fw:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 28%,transparent)}}
@@ -195,6 +196,7 @@ details[open]>*:not(summary){animation:dIn .45s ease both}
 main.intro>*{animation:fiIn .7s ease-out both}
 main.intro>h1{animation:none}
 .iw{display:inline}
+textarea,.fin{resize:none!important}
 </style>
 </head>
 <body>
@@ -315,6 +317,16 @@ function setLabel(id,text){
 function outText(){return out.__v||''}
 function snapOut(box){
   if(!box.animate||!box.parentNode||!box.offsetWidth)return;
+  var cs0=getComputedStyle(box);
+  if(cs0.display==='inline'){
+    var host=box.parentNode,hr=host.getBoundingClientRect(),br=box.getBoundingClientRect(),sn2=box.cloneNode(true);
+    sn2.removeAttribute('id');sn2.className=(box.className+' snap').trim();
+    sn2.style.cssText='position:absolute;left:'+(br.left-hr.left)+'px;top:'+(br.top-hr.top)+'px;white-space:nowrap;pointer-events:none;z-index:3;color:'+cs0.color;
+    host.appendChild(sn2);
+    var an2=sn2.animate([{opacity:1},{opacity:0}],{duration:320,easing:'ease-out'});
+    an2.onfinish=function(){if(sn2.parentNode)sn2.parentNode.removeChild(sn2)};
+    return;
+  }
   var par=box.offsetParent||box.parentNode,sn=box.cloneNode(true);
   sn.removeAttribute('id');
   sn.className=(box.className+' snap').trim();
@@ -390,7 +402,11 @@ function update(){
   $('shifts').innerHTML=ks.length?'<span class="shl">Shifts</span>'+ks.slice(0,14).map(function(v){return '<span class="chip">+'+v+'</span>'}).join('')+(ks.length>14?'<span class="shl">…</span>':'')+'<span class="shl">repeating</span>':'Enter at least one letter as the key.';
   var nm=key.value.replace(/[^A-Za-z]/g,'');
   nm=nm?nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase():'Ace';
-  paintDiff($('ttl'),nm,false,45)
+  {var tt=$('ttl'),pv=tt.__v===undefined?tt.textContent:tt.__v;
+  if(nm!==pv){
+    if(pv.length&&nm.indexOf(pv)!==0&&pv.indexOf(nm)!==0)snapOut(tt);
+    paintDiff(tt,nm,true,45);
+  }}
   document.title=nm+' Cipher';
   if(swapped){if(out.__v)snapOut(out);out.textContent='';out.__v=''}
   paintDiff(out,run(inp.value,ks,mode),true);
