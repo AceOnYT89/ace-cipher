@@ -175,6 +175,7 @@ details[open]>*:not(summary){animation:dIn .45s ease both}
 .fw.ph-off .fin::placeholder{opacity:0!important}
 .out.ph-off:empty::before{opacity:0!important}
 .card{position:relative}
+#ttl{display:inline-block}
 .chips{display:contents}
 h1{position:relative}
 .fw{position:relative;background:rgba(8,8,8,.75);border:1px solid var(--line);border-radius:10px;transition:border-color .2s,box-shadow .2s}
@@ -198,6 +199,7 @@ main.intro>*{animation:fiIn .7s ease-out both}
 main.intro>h1{animation:none}
 .iw{display:inline}
 textarea,.fin{resize:none!important}
+h1 .snap,h1 .snap span{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -305,7 +307,7 @@ function run(text,ks,dir){
   }
   return res;
 }
-var lastMode;
+var lastMode,lastKey,lastInp;
 function setLabel(id,text){
   var el=$(id);
   if(el.__lab===text)return;
@@ -355,6 +357,7 @@ function paintDiff(box,next,ghost,step,offset){
     }
   }
   if(a===np&&b===0&&mid>0){addIn(next.slice(a));return}
+  if(box.__xf&&mid>0&&rem.length>=1&&np>0)snapOut(box);
   var big=ghost&&mid===0&&rem.length>0&&(nn===0||rem.length>40||rem.indexOf('\n')>-1);
   if(big)snapOut(box);
   box.textContent='';
@@ -388,7 +391,7 @@ function syncFade(el){
   paintDiff(m,el.value,true);
   m.scrollTop=el.scrollTop;m.scrollLeft=el.scrollLeft;
 }
-fadeInput(inp);fadeInput(key);fadeInput($('bfIn'));
+fadeInput(inp);fadeInput(key);fadeInput($('bfIn'));key.__mir.__xf=true;
 (function(){
   var t1=$('ttl'),t2=$('ttl2'),n0=key.value.replace(/[^A-Za-z]/g,'');
   n0=n0?n0.charAt(0).toUpperCase()+n0.slice(1).toLowerCase():'Ace';
@@ -438,17 +441,21 @@ function renderShifts(ks){
 function update(){
   syncFade(inp);syncFade(key);syncFade($('bfIn'));
   var swapped=(lastMode!==undefined&&mode!==lastMode);lastMode=mode;
+  var keyChanged=(lastKey!==undefined&&key.value!==lastKey&&inp.value===lastInp);lastKey=key.value;lastInp=inp.value;
   var ks=shiftsOf(key.value);
   renderShifts(ks);
   var nm=key.value.replace(/[^A-Za-z]/g,'');
   nm=nm?nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase():'Ace';
   {var tt=$('ttl'),pv=tt.__v===undefined?tt.textContent:tt.__v;
   if(nm!==pv){
-    if(pv.length&&nm.indexOf(pv)!==0&&pv.indexOf(nm)!==0)snapOut(tt);
-    paintDiff(tt,nm,true,45);
+    var repl=pv.length&&nm.indexOf(pv)!==0&&pv.indexOf(nm)!==0,w0=tt.getBoundingClientRect().width;
+    if(repl)snapOut(tt);
+    paintDiff(tt,nm,true,repl?26:45);
+    var w1=tt.getBoundingClientRect().width;
+    if(Math.abs(w1-w0)>1&&tt.animate)tt.animate([{width:w0+'px'},{width:w1+'px'}],{duration:340,easing:'cubic-bezier(.2,.8,.2,1)'});
   }}
   document.title=nm+' Cipher';
-  if(swapped){if(out.__v)snapOut(out);out.textContent='';out.__v=''}
+  if(swapped||keyChanged){if(out.__v)snapOut(out);out.textContent='';out.__v=''}
   paintDiff(out,run(inp.value,ks,mode),true);
   var fl='',fc=0,ft=inp.value,fi,fch,fs,fo;
   if(ks.length){
