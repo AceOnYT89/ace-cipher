@@ -175,6 +175,7 @@ details[open]>*:not(summary){animation:dIn .45s ease both}
 .fw.ph-off .fin::placeholder{opacity:0!important}
 .out.ph-off:empty::before{opacity:0!important}
 .card{position:relative}
+.chips{display:contents}
 h1{position:relative}
 .fw{position:relative;background:rgba(8,8,8,.75);border:1px solid var(--line);border-radius:10px;transition:border-color .2s,box-shadow .2s}
 .fw:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px rgba(225,29,42,.22)}
@@ -395,11 +396,50 @@ fadeInput(inp);fadeInput(key);fadeInput($('bfIn'));
   paintDiff(t1,n0,false,70,0);
   paintDiff(t2,'Cipher',false,70,n0.length*70+90);
 })();
+function chipOut(el){
+  if(!el.animate||!el.parentNode){if(el.parentNode)el.parentNode.removeChild(el);return}
+  var cs=getComputedStyle(el),w=el.getBoundingClientRect().width;
+  el.style.overflow='hidden';el.style.whiteSpace='nowrap';el.style.pointerEvents='none';
+  var a=el.animate([{opacity:1,width:w+'px',paddingLeft:cs.paddingLeft,paddingRight:cs.paddingRight,borderLeftWidth:cs.borderLeftWidth,borderRightWidth:cs.borderRightWidth,marginRight:'0px'},{opacity:0,width:'0px',paddingLeft:'0px',paddingRight:'0px',borderLeftWidth:'0px',borderRightWidth:'0px',marginRight:'-6px'}],{duration:280,easing:'ease-out',fill:'forwards'});
+  a.onfinish=function(){if(el.parentNode)el.parentNode.removeChild(el)};
+}
+function chipIn(el,delay){
+  if(!el.animate)return;
+  var cs=getComputedStyle(el),w=el.getBoundingClientRect().width;
+  el.style.overflow='hidden';el.style.whiteSpace='nowrap';
+  var a=el.animate([{opacity:0,width:'0px',paddingLeft:'0px',paddingRight:'0px',borderLeftWidth:'0px',borderRightWidth:'0px',marginRight:'-6px'},{opacity:1,width:w+'px',paddingLeft:cs.paddingLeft,paddingRight:cs.paddingRight,borderLeftWidth:cs.borderLeftWidth,borderRightWidth:cs.borderRightWidth,marginRight:'0px'}],{duration:320,delay:delay||0,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'});
+  a.onfinish=a.oncancel=function(){el.style.overflow='';el.style.whiteSpace=''};
+}
+function renderShifts(ks){
+  var sh=$('shifts');
+  if(!sh.__b){
+    sh.innerHTML='<span class="shl">Shifts</span><span class="chips"></span><span class="shl shmore" hidden>\u2026</span><span class="shl shend">repeating</span><span class="shl shnone" hidden>Enter at least one letter as the key.</span>';
+    sh.__b=1;sh.__vals=[];sh.__els=[];sh.__first=true;
+  }
+  var box=sh.querySelector('.chips'),vals=ks.slice(0,14),prev=sh.__vals,p=0,i,first=sh.__first,c;
+  sh.__first=false;
+  sh.firstChild.hidden=!ks.length;
+  sh.querySelector('.shmore').hidden=ks.length<=14;
+  sh.querySelector('.shend').hidden=!ks.length;
+  sh.querySelector('.shnone').hidden=ks.length>0;
+  while(p<vals.length&&p<prev.length&&vals[p]===prev[p])p++;
+  for(i=p;i<sh.__els.length;i++){
+    c=sh.__els[i];
+    if(first){if(c.parentNode)c.parentNode.removeChild(c)}else chipOut(c);
+  }
+  sh.__els.length=p;
+  for(i=p;i<vals.length;i++){
+    c=document.createElement('span');c.className='chip';c.textContent='+'+vals[i];
+    box.appendChild(c);sh.__els.push(c);
+    if(!first)chipIn(c,(i-p)*60);
+  }
+  sh.__vals=vals.slice();
+}
 function update(){
   syncFade(inp);syncFade(key);syncFade($('bfIn'));
   var swapped=(lastMode!==undefined&&mode!==lastMode);lastMode=mode;
   var ks=shiftsOf(key.value);
-  $('shifts').innerHTML=ks.length?'<span class="shl">Shifts</span>'+ks.slice(0,14).map(function(v){return '<span class="chip">+'+v+'</span>'}).join('')+(ks.length>14?'<span class="shl">…</span>':'')+'<span class="shl">repeating</span>':'Enter at least one letter as the key.';
+  renderShifts(ks);
   var nm=key.value.replace(/[^A-Za-z]/g,'');
   nm=nm?nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase():'Ace';
   {var tt=$('ttl'),pv=tt.__v===undefined?tt.textContent:tt.__v;
