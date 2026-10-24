@@ -620,6 +620,15 @@ $('hClear').onclick=hClearAll;
 $('hOn').onclick=function(){histOn=!histOn;try{localStorage.setItem('aceCipherHistOn',histOn?'1':'0')}catch(e){}hMeta()};
 setInterval(function(){[].forEach.call(document.querySelectorAll('#hList .ht'),function(t){t.textContent=ago(+t.getAttribute('data-t'))})},30000);
 hist=hLoad();hRender();
+function fitName(nm){
+  var h=document.querySelector('h1'),c=$('ttl2');
+  if(!h||!c)return nm;
+  var fs=parseFloat(getComputedStyle(h).fontSize)||46,avail=h.clientWidth-c.offsetWidth-fs*0.45;
+  var maxN=Math.max(4,Math.floor(avail/(fs*0.56)));
+  return nm.length>maxN?nm.slice(0,maxN-1)+'\u2026':nm;
+}
+var rzT=null;
+window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(function(){update()},200)});
 function update(){
   syncFade(inp);syncFade(key);syncFade($('bfIn'));
   var swapped=(lastMode!==undefined&&mode!==lastMode);lastMode=mode;
@@ -628,17 +637,17 @@ function update(){
   renderShifts(ks);
   var nm=key.value.replace(/[^A-Za-z]/g,'');
   nm=nm?nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase():'Ace';
-  {var tt=$('ttl'),pv=tt.__v===undefined?tt.textContent:tt.__v;
-  if(nm!==pv){
-    var repl=pv.length&&nm.indexOf(pv)!==0&&pv.indexOf(nm)!==0,w0=tt.getBoundingClientRect().width,now=performance.now();
+  {var tt=$('ttl'),pv=tt.__v===undefined?tt.textContent:tt.__v,shown=fitName(nm);
+  if(shown!==pv){
+    var repl=pv.length&&shown.indexOf(pv)!==0&&pv.indexOf(shown)!==0,w0=tt.getBoundingClientRect().width,now=performance.now(),busy=!!tt.__wa;
     if(tt.__wa){tt.__wa.cancel();tt.__wa=null}
     if(repl){snapOut(tt,160);tt.__until=now+160}
     var off=Math.max(0,(tt.__until||0)-now);
     tt.__V=w0;
-    paintDiff(tt,nm,true,repl?26:45,off);
+    paintDiff(tt,shown,true,repl?26:45,off);
     tt.__V=null;
     var w1=tt.getBoundingClientRect().width;
-    if(!tt.querySelector('.gh')&&Math.abs(w1-w0)>1&&tt.animate){
+    if(!busy&&!tt.querySelector('.gh')&&Math.abs(w1-w0)>1&&tt.animate){
       var wa=tt.animate([{width:w0+'px'},{width:w1+'px'}],{duration:340,easing:'cubic-bezier(.2,.8,.2,1)'});
       tt.__wa=wa;
       wa.onfinish=wa.oncancel=function(){if(tt.__wa===wa)tt.__wa=null};
