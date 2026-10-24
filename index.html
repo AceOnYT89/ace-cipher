@@ -223,6 +223,8 @@ h1 .snap,h1 .snap span{color:var(--ink)}
 #toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:14px;background:rgba(18,18,18,.97);border:1px solid var(--acc);border-radius:999px;padding:10px 12px 10px 18px;font-size:.92rem;box-shadow:0 14px 40px -10px rgba(0,0,0,.9);white-space:nowrap}
 #toast[hidden]{display:none}
 #toast button{border:0;border-radius:999px;background:var(--acc);color:var(--acc-ink);font:700 .85rem inherit;font-family:inherit;padding:7px 14px;cursor:pointer}
+html,body,#hList{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar,#hList::-webkit-scrollbar{display:none;width:0;height:0}
 </style>
 </head>
 <body>
