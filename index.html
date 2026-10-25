@@ -225,6 +225,23 @@ h1 .snap,h1 .snap span{color:var(--ink)}
 #toast button{border:0;border-radius:999px;background:var(--acc);color:var(--acc-ink);font:700 .85rem inherit;font-family:inherit;padding:7px 14px;cursor:pointer}
 html,body,#hList{scrollbar-width:none;-ms-overflow-style:none}
 html::-webkit-scrollbar,body::-webkit-scrollbar,#hList::-webkit-scrollbar{display:none;width:0;height:0}
+.chainbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.chnote{color:var(--mute);font-size:.82rem}
+#chBox{margin-top:10px}
+#chBox[hidden]{display:none}
+#chList{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.chrow{display:flex;align-items:center;gap:8px}
+.chn{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:1px solid var(--acc);color:var(--acc);font:700 .75rem ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;justify-content:center}
+.chrow input{flex:1;min-width:0}
+.chrow .mini{flex:0 0 auto;padding:9px 12px}
+#chAdd{width:100%}
+.chsteps{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.chsteps[hidden]{display:none}
+.chs{border:1px solid var(--line);background:rgba(8,8,8,.7);border-radius:10px;padding:8px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}
+.chs b{display:block;color:var(--acc);font-size:.68rem;letter-spacing:.08em;margin-bottom:3px}
+.chs span{word-break:break-word;white-space:pre-wrap}
+.chview{display:flex;gap:6px;margin-top:8px}
+.chview .mini{flex:1}
 </style>
 </head>
 <body>
@@ -246,6 +263,9 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#hList::-webkit-scrollbar{displa
 <div class="card">
 <label for="key">Key (letters set the shifts)</label>
 <input id="key" value="ACE" autocapitalize="characters" autocomplete="off" spellcheck="false">
+<div class="chainbar"><button type="button" class="mini" id="chOn">Chain keys: off</button><span class="chnote" id="chNote">use several keys, one after another</span></div>
+<div id="chBox" hidden><div id="chList"></div><button type="button" class="mini" id="chAdd">+ Add key</button>
+<div class="chview"><button type="button" class="mini" id="chV1">Step by step</button><button type="button" class="mini" id="chV2">Combined</button></div></div>
 <div class="shifts" id="shifts"></div>
 <div class="slotsH"><span class="slotsL">Saved keys</span><button type="button" class="mini" id="eK">Edit</button></div>
 <div class="slots" id="slots"></div>
@@ -263,6 +283,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#hList::-webkit-scrollbar{displa
 <label id="outL">Cipher text</label>
 <div class="out" id="out" aria-live="polite"></div>
 <div class="flow" id="flow" aria-hidden="true"></div>
+<div class="chsteps" id="chSteps" hidden></div>
 <div class="row">
 <button class="btn pri" id="cp" type="button">Copy</button>
 <button class="btn" id="sw" type="button">Use as input ⇄</button>
@@ -511,7 +532,7 @@ function hEl(e){
   d.className='hi';d.setAttribute('data-id',e.id);
   m.className='hm';
   var tag=document.createElement('span');tag.className='tag'+(e.m===1?'':' d');tag.textContent=e.m===1?'ENCODED':'DECODED';
-  var k=document.createElement('span');k.className='hk';k.textContent='key '+e.k;
+  var k=document.createElement('span');k.className='hk';k.textContent='key '+e.k+((e.c&&e.c.length)?' \u2192 '+e.c.join(' \u2192 '):'');
   var t=document.createElement('span');t.className='ht';t.textContent=ago(e.t);t.setAttribute('data-t',e.t);
   m.appendChild(tag);m.appendChild(k);m.appendChild(t);
   io.className='hio';
@@ -551,14 +572,14 @@ function hUpdateEl(e){
 }
 function histSnap(){
   if(!histOn)return;
-  var inV=inp.value.slice(0,2000),oV=outText().slice(0,2000),k=key.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,40),i;
+  var inV=inp.value.slice(0,2000),oV=outText().slice(0,2000),k=key.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,40),i,c=chOn?chExtra.map(cleanKey).filter(function(x){return x.length}):[],cs=JSON.stringify(c);
   if(!inV.trim()||!k||!oV)return;
-  for(i=0;i<hist.length;i++){if(hist[i].i===inV&&hist[i].k===k&&hist[i].m===mode)return}
+  for(i=0;i<hist.length;i++){if(hist[i].i===inV&&hist[i].k===k&&hist[i].m===mode&&JSON.stringify(hist[i].c||[])===cs)return}
   var top=hist[0];
-  if(top&&top.k===k&&top.m===mode&&Date.now()-top.t<60000&&(inV.indexOf(top.i)===0||top.i.indexOf(inV)===0)){
+  if(top&&top.k===k&&top.m===mode&&JSON.stringify(top.c||[])===cs&&Date.now()-top.t<60000&&(inV.indexOf(top.i)===0||top.i.indexOf(inV)===0)){
     top.i=inV;top.o=oV;top.t=Date.now();hSave();hUpdateEl(top);return;
   }
-  hAdd({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),t:Date.now(),m:mode,k:k,i:inV,o:oV});
+  hAdd({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),t:Date.now(),m:mode,k:k,c:c,i:inV,o:oV});
 }
 function scheduleHist(){clearTimeout(hTimer);hTimer=setTimeout(histSnap,1800)}
 function flushHistory(){clearTimeout(hTimer);histSnap()}
@@ -616,12 +637,139 @@ $('hList').addEventListener('click',function(ev){
   if(!e)return;
   if(btn.classList.contains('h-del'))hDelete(id);
   else if(btn.classList.contains('h-copy'))copyTxt(e.o,btn);
-  else if(btn.classList.contains('h-use')){key.value=e.k;mode=e.m;inp.value=e.i;update();window.scrollTo({top:0,behavior:'smooth'})}
+  else if(btn.classList.contains('h-use')){key.value=e.k;mode=e.m;inp.value=e.i;var had=chOn;chOn=!!(e.c&&e.c.length);if(chOn)chExtra=e.c.slice(0,4);chSave();chApply(had!==chOn);update();window.scrollTo({top:0,behavior:'smooth'})}
 });
 $('hClear').onclick=hClearAll;
 $('hOn').onclick=function(){histOn=!histOn;try{localStorage.setItem('aceCipherHistOn',histOn?'1':'0')}catch(e){}hMeta()};
 setInterval(function(){[].forEach.call(document.querySelectorAll('#hList .ht'),function(t){t.textContent=ago(+t.getAttribute('data-t'))})},30000);
 hist=hLoad();hRender();
+var CHK='aceCipherChain',chOn=false,chExtra=[],chMode='steps';
+try{var cj=JSON.parse(localStorage.getItem(CHK));if(cj&&Array.isArray(cj.keys)){chOn=!!cj.on;chMode=cj.mode==='combined'?'combined':'steps';chExtra=cj.keys.slice(0,4).map(function(x){return String(x||'').replace(/[^A-Za-z]/g,'').slice(0,40)})}}catch(e){}
+function chSave(){try{localStorage.setItem(CHK,JSON.stringify({on:chOn,keys:chExtra,mode:chMode}))}catch(e){}}
+function cleanKey(x){return String(x||'').replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,40)}
+function chainKeys(){var k=[key.value];if(chOn)k=k.concat(chExtra);return k.map(cleanKey).filter(function(x){return x.length})}
+function chainList(){return chainKeys().map(shiftsOf)}
+function gcd(a,b){return b?gcd(b,a%b):a}
+function combineShifts(l){
+  var n=1,out=[],i,v;
+  l.forEach(function(a){n=n*a.length/gcd(n,a.length);if(n>600)n=600});
+  for(i=0;i<n;i++){v=0;l.forEach(function(a){v+=a[i%a.length]});out.push(v%26||26)}
+  return out;
+}
+function runChain(text,l,dir){
+  var t=text,i;
+  if(dir===1){for(i=0;i<l.length;i++)t=run(t,l[i],1)}
+  else{for(i=l.length-1;i>=0;i--)t=run(t,l[i],-1)}
+  return t;
+}
+function chainSig(){return key.value+(chOn?'|'+chExtra.join('|'):'')}
+function slideBox(el,show){
+  var h,a;
+  if(el.__sa){el.__sa.cancel();el.__sa=null}
+  if(show){
+    el.hidden=false;
+    if(!el.animate)return;
+    h=el.getBoundingClientRect().height;el.style.overflow='hidden';
+    a=el.animate([{height:'0px',opacity:0},{height:h+'px',opacity:1}],{duration:320,easing:'cubic-bezier(.2,.8,.2,1)'});
+    el.__sa=a;a.onfinish=a.oncancel=function(){el.style.overflow='';el.__sa=null};
+  }else{
+    if(!el.animate){el.hidden=true;return}
+    h=el.getBoundingClientRect().height;el.style.overflow='hidden';
+    a=el.animate([{height:h+'px',opacity:1},{height:'0px',opacity:0}],{duration:260,easing:'ease-in',fill:'forwards'});
+    el.__sa=a;
+    a.onfinish=function(){el.hidden=true;a.cancel()};
+    a.oncancel=function(){el.style.overflow='';if(el.__sa===a)el.__sa=null};
+  }
+}
+function chViewApply(){
+  $('chV1').className='mini'+(chMode==='steps'?' on':'');
+  $('chV2').className='mini'+(chMode==='combined'?' on':'');
+}
+$('chV1').onclick=function(){chMode='steps';chSave();chViewApply();update()};
+$('chV2').onclick=function(){chMode='combined';chSave();chViewApply();update()};
+function lcmOf(l){var n=1;l.forEach(function(a){n=n*a.length/gcd(n,a.length);if(n>1e6)n=1e6});return n}
+function renderChain(){
+  var box=$('chList');box.innerHTML='';
+  chExtra.forEach(function(v,i){
+    var r=document.createElement('div'),n=document.createElement('span'),inp2=document.createElement('input'),x=document.createElement('button');
+    r.className='chrow';n.className='chn';n.textContent=String(i+2);
+    inp2.type='text';inp2.value=v;inp2.placeholder='Key '+(i+2);inp2.setAttribute('autocapitalize','characters');inp2.setAttribute('autocomplete','off');inp2.setAttribute('spellcheck','false');inp2.setAttribute('aria-label','Key '+(i+2));
+    inp2.addEventListener('input',function(){chExtra[i]=inp2.value.replace(/[^A-Za-z]/g,'').slice(0,40);if(chExtra[i]!==inp2.value)inp2.value=chExtra[i];chSave();update()});
+    x.type='button';x.className='mini';x.textContent='\u2715';x.setAttribute('aria-label','Remove key '+(i+2));
+    x.addEventListener('click',function(){
+      chExtra.splice(i,1);
+      if(!chExtra.length){chOn=false;chSave();chApply(true);update();return}
+      chSave();renderChain();update();
+    });
+    r.appendChild(n);r.appendChild(inp2);r.appendChild(x);box.appendChild(r);
+  });
+  $('chAdd').hidden=chExtra.length>=4;
+}
+function chApply(animate){
+  var b=$('chOn'),box=$('chBox');
+  b.textContent='Chain keys: '+(chOn?'on':'off');
+  b.className='mini'+(chOn?' on':'');
+  $('chNote').textContent=chOn?'keys apply in order: 1 \u2192 2 \u2192 3\u2026 (decoding undoes them in reverse)':'use several keys, one after another';
+  renderChain();chViewApply();
+  if(animate)slideBox(box,chOn);else box.hidden=!chOn;
+}
+$('chOn').onclick=function(){
+  chOn=!chOn;
+  if(chOn&&!chExtra.length)chExtra.push('');
+  chSave();chApply(true);update();
+  if(chOn){var f=$('chList').querySelector('input');if(f&&!f.value)setTimeout(function(){try{f.focus({preventScroll:true})}catch(e){f.focus()}},340)}
+};
+$('chAdd').onclick=function(){
+  if(chExtra.length>=4)return;
+  chExtra.push('');chSave();renderChain();update();
+  var rows=$('chList').querySelectorAll('input');if(rows.length)rows[rows.length-1].focus();
+};
+chApply(false);
+function renderSteps(){
+  var box=$('chSteps'),names=chainKeys(),l=chainList();
+  box.innerHTML='';
+  if(!(chOn&&l.length>1)){box.hidden=true;return}
+  var comb=chMode==='combined',fits=lcmOf(l)<=600,row,b,sp;
+  if(comb&&fits){
+    var eff=combineShifts(l),str=eff.map(function(v){return String.fromCharCode(64+v)}).join('');
+    row=document.createElement('div');b=document.createElement('b');sp=document.createElement('span');
+    row.className='chs';
+    b.textContent='ALL '+l.length+' KEYS COMBINED INTO ONE KEY \u00b7 '+eff.length+' LETTERS';
+    sp.textContent=str.length>200?str.slice(0,200)+'\u2026':str;
+    row.appendChild(b);row.appendChild(sp);
+    var sh=document.createElement('span');
+    sh.style.cssText='display:block;margin-top:6px;color:var(--mute)';
+    sh.textContent='shifts: '+eff.slice(0,24).map(function(v){return '+'+v}).join(' ')+(eff.length>24?' \u2026':'')+' (repeating)';
+    row.appendChild(sh);
+    if(str.length<=40){
+      var ub=document.createElement('button');ub.type='button';ub.className='mini';ub.style.cssText='margin-top:8px;width:100%';
+      ub.textContent='Use this as my single key';
+      ub.onclick=function(){key.value=str;chOn=false;chSave();chApply(true);update()};
+      row.appendChild(ub);
+    }else{
+      var nt=document.createElement('span');nt.style.cssText='display:block;margin-top:6px;color:var(--mute)';
+      nt.textContent='Too long to turn into a single key here (40 letters max).';row.appendChild(nt);
+    }
+    box.appendChild(row);box.hidden=false;return;
+  }
+  if(!inp.value.trim()){box.hidden=true;return}
+  var t=inp.value,order=[],i;
+  for(i=0;i<l.length;i++)order.push(mode===1?i:l.length-1-i);
+  order.forEach(function(idx,n){
+    t=run(t,l[idx],mode);
+    var r=document.createElement('div'),bb=document.createElement('b'),ss=document.createElement('span');
+    r.className='chs';
+    bb.textContent=(mode===1?'STEP '+(n+1)+' \u00b7 KEY ':'UNDO KEY ')+names[idx];
+    ss.textContent=clip(t,160);
+    r.appendChild(bb);r.appendChild(ss);box.appendChild(r);
+  });
+  if(comb&&!fits){
+    var note=document.createElement('p');note.className='bfnote';
+    note.textContent='These keys combine into more than 600 shifts, so they are shown step by step.';
+    box.appendChild(note);
+  }
+  box.hidden=false;
+}
 function fitName(nm){
   var h=document.querySelector('h1'),c=$('ttl2');
   if(!h||!c)return nm;
@@ -634,9 +782,9 @@ window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(fun
 function update(){
   syncFade(inp);syncFade(key);syncFade($('bfIn'));
   var swapped=(lastMode!==undefined&&mode!==lastMode);lastMode=mode;
-  var keyChanged=(lastKey!==undefined&&key.value!==lastKey&&inp.value===lastInp);lastKey=key.value;lastInp=inp.value;
-  var ks=shiftsOf(key.value);
-  renderShifts(ks);
+  var keyChanged=(lastKey!==undefined&&chainSig()!==lastKey&&inp.value===lastInp);lastKey=chainSig();lastInp=inp.value;
+  var ks=shiftsOf(key.value),chain=chainList(),eff=chain.length?combineShifts(chain):ks;
+  renderShifts(eff);
   var nm=key.value.replace(/[^A-Za-z]/g,'');
   nm=nm?nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase():'Ace';
   {var tt=$('ttl'),pv=tt.__v===undefined?tt.textContent:tt.__v,shown=fitName(nm);
@@ -658,14 +806,16 @@ function update(){
   document.title=nm+' Cipher';
   var xo=0;
   if(swapped||keyChanged){if(out.__v){snapOut(out,160);xo=160}out.textContent='';out.__v=''}
-  paintDiff(out,run(inp.value,ks,mode),true,0,xo);
+  var useComb=chOn&&chMode==='combined'&&chain.length>1&&lcmOf(chain)<=600;
+  paintDiff(out,useComb?run(inp.value,eff,mode):runChain(inp.value,chain,mode),true,0,xo);
+  renderSteps();
   scheduleHist();
   var fl='',fc=0,ft=inp.value,fi,fch,fs,fo;
-  if(ks.length){
+  if(eff.length){
     for(fi=0;fi<ft.length&&fc<14;fi++){
       fch=ft.charAt(fi);
       if(/[A-Za-z]/.test(fch)){
-        fs=ks[fc%ks.length];
+        fs=eff[fc%eff.length];
         fo=String.fromCharCode((fch.toUpperCase().charCodeAt(0)-65+(fs*mode)%26+26)%26+65);
         fl+='<span class="fl"><b>'+fch.toUpperCase()+'</b><u>'+(mode===1?'+':'\u2212')+fs+'</u><b class="o">'+fo+'</b></span>';
         fc++;
@@ -677,7 +827,7 @@ function update(){
   setLabel('outL',mode===1?'Cipher text':'Plain text');
   $('tE').className=mode===1?'on':'';
   $('tD').className=mode===-1?'on':'';
-  var ku={};ks.forEach(function(v){ku[v]=1});
+  var ku={};eff.forEach(function(v){ku[v]=1});
   var g='';
   for(var i=1;i<=26;i++)g+='<div'+(ku[i]?' class="k"':'')+'>'+String.fromCharCode(64+i)+' '+i+'</div>';
   $('grid').innerHTML=g;
